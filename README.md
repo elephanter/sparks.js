@@ -1,5 +1,32 @@
 Sparks.js
 =========
+
+#### My updates for this lib ####
+
+Just use it in THREE.js
+Look at code example:
+
+    scene.add(new THREE.Particles({
+                                    size:10,
+                                    count: 100,
+                                    position: new THREE.Vector3(0,0,0),
+                                    program:function(ctx){
+                                        ctx.fillRect(0, 0, 10, 10);
+                                    },
+                                    sparksInit: function(emitter, SPARKS){
+                                        var sphereCap = new SPARKS.SphereCapZone(0, 0, 0, 0, 0, 10);
+                                        emitter.addInitializer(new SPARKS.Lifetime(0,2));
+                                        emitter.addInitializer(new SPARKS.Velocity(sphereCap));
+                                        emitter.addAction(new SPARKS.Age());
+                                        emitter.addAction(new SPARKS.Move());
+                                        emitter.addAction(new SPARKS.Accelerate(0.2));
+                                    },
+                                    position: new THREE.Vector3(10,10,10)
+                                  })
+            );
+
+You can view online demo here http://elephanter.github.io/sparks.js
+
 #### Simple 3D Javascript Particles Engine ####
 
 Sparks.js is a library to help create 3D particles in Javascript.
