@@ -1,0 +1,51 @@
+<html>
+    <head>
+        <script type="text/javascript" src="libs/three.js"></script>
+        <script type="text/javascript" src="libs/underscore.js"></script>
+        <script type="text/javascript" src="libs/tween.js"></script>
+        <script type="text/javascript" src="Sparks.js"></script>
+        <script type="text/javascript" src="ThreeSparks.js"></script>
+    </head>
+<body>
+    <script type="text/javascript">
+        var camera, scene, renderer, geometry, material, mesh;
+
+        init();
+        doParticle();
+        animate();
+
+        function init() {
+
+            scene = new THREE.Scene();
+            var ambientLight = new THREE.AmbientLight( 0xcccccc );
+            scene.add(ambientLight);
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 10000);
+            camera.position.z = 500;
+            scene.add(camera);
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            document.body.appendChild(renderer.domElement);
+        }
+
+        function doParticle(){
+            ps = new THREE.Particles();
+            scene.add(ps);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            render();
+        }
+
+        var _rotation = 0;
+        function render() {
+            _rotation += 3;
+            renderer.render(scene, camera);
+            ps.emitterPosition.x = 100 * Math.sin((_rotation) * SPARKS.Utils.DEGREE_TO_RADIAN);
+            ps.emitterPosition.y = 100 * Math.cos((_rotation) * SPARKS.Utils.DEGREE_TO_RADIAN);
+            ps.emitterPosition.z = 100 * Math.cos((_rotation) * SPARKS.Utils.DEGREE_TO_RADIAN);
+        }
+    </script>
+</body>
