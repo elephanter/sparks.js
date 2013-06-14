@@ -12,6 +12,48 @@
 var SPARKS = {};
 
 /********************************
+* VectorPool
+*
+*  Reuse much of Vectors if possible
+*********************************/
+
+SPARKS.VectorPool = {
+    __pools: [],
+
+    // Get a new Vector
+    get: function() {
+        if (this.__pools.length>0) {
+            return this.__pools.pop();
+        }
+
+        return this._addToPool();
+
+    },
+
+    // Release a vector back into the pool
+    release: function(v) {
+        this.__pools.push(v);
+    },
+
+    // Create a bunch of vectors and add to the pool
+    _addToPool: function() {
+        //console.log("creating some pools");
+
+        for (var i=0, size = 100; i < size; i++) {
+            this.__pools.push(new THREE.Vector3());
+        }
+
+        return new THREE.Vector3();
+
+    }
+
+
+
+};
+SPARKS.VelocityPool=SPARKS.VectorPool;
+
+
+/********************************
 * Emitter Class
 *
 *   Creates and Manages Particles
@@ -97,8 +139,11 @@ SPARKS.Engine = {
 
 };
 
-SPARKS.Emitter = function (counter) {
-
+SPARKS.Emitter = function (counter, options) {
+    if (typeof options == "undefined") options = {
+                                                    VelocityPool: SPARKS.VelocityPool,
+                                                    VectorPool: SPARKS.VectorPool
+                                                };
     this._counter = counter ? counter : new SPARKS.SteadyCounter(10); // provides number of particles to produce
 
     this._particles = [];
@@ -111,6 +156,8 @@ SPARKS.Emitter = function (counter) {
     this._handlers = [];
 
     this.callbacks = {};
+    if (options.VelocityPool) this._velocityPool = options.VelocityPool;
+    if (options.VectorPool) this._vectorPool = options.VectorPool;
 };
 
 
@@ -122,6 +169,8 @@ SPARKS.Emitter.prototype = {
 	_timerStep: 10,
 	_velocityVerlet: false,
 	_isRunning: false,
+    _velocityPool: SPARKS.VelocityPool,
+    _vectorPool: SPARKS.VectorPool,
 
 	// run its built in timer / stepping
 	start: function() {
@@ -219,8 +268,8 @@ SPARKS.Emitter.prototype = {
                 //particle =
 				this._particles.splice( i, 1 );
                 this.dispatchEvent("dead", particle);
-				SPARKS.VectorPool.release(particle.position); //
-				SPARKS.VelocityPool.release(particle.velocity);
+				this._vectorPool.release(particle.position); //
+				this._velocityPool.release(particle.velocity);
 
             } else {
                 this.dispatchEvent("updated", particle);
@@ -232,7 +281,7 @@ SPARKS.Emitter.prototype = {
     },
 
     createParticle: function() {
-        var particle = new SPARKS.Particle();
+        var particle = new SPARKS.Particle(this._vectorPool, this._velocityPool);
         // In future, use a Particle Factory
         var len = this._initializers.length, i;
 
@@ -354,7 +403,7 @@ SPARKS.ShotCounter.prototype.updateEmitter = function(emitter, time) {
 *
 *   Represents a single particle
 *********************************/
-SPARKS.Particle = function() {
+SPARKS.Particle = function(VectorPool, VelocityPool) {
 
     /**
      * The lifetime of the particle, in seconds.
@@ -382,9 +431,9 @@ SPARKS.Particle = function() {
      * For 3D
      */
 
-     this.position = SPARKS.VectorPool.get().set(0,0,0); //new THREE.Vector3( 0, 0, 0 );
-     this.velocity = SPARKS.VelocityPool.get().set(0,0,0); //new THREE.Vector3( 0, 0, 0 );
-	this._oldvelocity = SPARKS.VelocityPool.get().set(0,0,0);
+    this.position = VectorPool.get().set(0,0,0); //new THREE.Vector3( 0, 0, 0 );
+    this.velocity = VelocityPool.get().set(0,0,0); //new THREE.Vector3( 0, 0, 0 );
+	this._oldvelocity = VelocityPool.get().set(0,0,0);
      // rotation vec3
      // angVelocity vec3
      // faceAxis vec3
@@ -404,7 +453,7 @@ SPARKS.Action = function() {
 
 
 SPARKS.Age = function(easing) {
-    this._easing = (easing == null) ? TWEEN.Easing.Linear.None : easing;
+    this._easing = (easing == null) ? TWEEN.Easing.Linear.EaseNone : easing;
 };
 
 SPARKS.Age.prototype.update = function (emitter, particle, time) {
@@ -838,46 +887,6 @@ SPARKS.Target.prototype.initialize = function( emitter, particle ) {
 
 };
 
-/********************************
-* VectorPool
-*
-*  Reuse much of Vectors if possible
-*********************************/
-
-SPARKS.VectorPool = {
-	__pools: [],
-
-	// Get a new Vector
-	get: function() {
-		if (this.__pools.length>0) {
-			return this.__pools.pop();
-		}
-
-		return this._addToPool();
-
-	},
-
-	// Release a vector back into the pool
-	release: function(v) {
-		this.__pools.push(v);
-	},
-
-	// Create a bunch of vectors and add to the pool
-	_addToPool: function() {
-		//console.log("creating some pools");
-
-		for (var i=0, size = 100; i < size; i++) {
-			this.__pools.push(new THREE.Vector3());
-		}
-
-		return new THREE.Vector3();
-
-	}
-
-
-
-};
-SPARKS.VelocityPool=SPARKS.VectorPool;
 
 /********************************
 * Util Classes
